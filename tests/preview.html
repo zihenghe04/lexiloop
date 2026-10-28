@@ -6,15 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LexiLoop</title>
   <script>{const t=new URLSearchParams(location.search).get("theme");if(t)localStorage.setItem("lexiloopReaderTheme",t);}</script>
-    <link rel="stylesheet" href="../ui-dist/assets/app.css?v=1793171057598" />
+    <link rel="stylesheet" href="../ui-dist/assets/app.css?v=1793172153057" />
   </head>
   <body>
     <div id="root"></div>
     <!-- 复用既有纯逻辑模块（IIFE 挂到 globalThis）：本地 PDF 写入与备份/恢复 -->
-    <script src="preview-mocks.js?v=1793171057598"></script>
-  <script src="../pdf-library.js?v=1793171057598"></script>
-    <script src="../backup.js?v=1793171057598"></script>
-    <script type="module" src="../ui-dist/assets/app.js?v=1793171057598"></script>
+    <script src="preview-mocks.js?v=1793172153057"></script>
+  <script src="../pdf-library.js?v=1793172153057"></script>
+    <script src="../backup.js?v=1793172153057"></script>
+    <script src="../cc-switch-import.js?v=1793172153057"></script>
+    <script type="module" src="../ui-dist/assets/app.js?v=1793172153057"></script>
     <script>{const p=new URLSearchParams(location.search);const tab=p.get("tab");if(tab)setTimeout(()=>document.querySelector(`[data-tab="${tab}"]`)?.click(),300);if(p.has("settings"))setTimeout(()=>document.getElementById("shortcutSettingsButton").click(),500);if(p.has("provider"))setTimeout(()=>document.getElementById("shortcutSettingsButton").click(),500);if(p.has("addConnection"))setTimeout(()=>document.getElementById("addConnectionButton").click(),600);if(p.has("menu"))setTimeout(()=>{const d=document.querySelector("details.paper-more");if(d)d.open=true;},700);if(p.has("reveal"))setTimeout(()=>document.dispatchEvent(new KeyboardEvent("keydown",{key:" ",bubbles:true})),700);}</script>
 </body>
 </html>

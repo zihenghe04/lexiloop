@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Icon from "../components/Icon.jsx";
-import { Field, Segmented } from "../components/ui.jsx";
+import { Field, Modal, Segmented, Spinner } from "../components/ui.jsx";
 import {
   assignRoles,
   backupModule,
+  ccSwitchPreview,
   listModels,
   oauthAccount,
   removeConnection,
@@ -59,6 +60,32 @@ function newConnectionId() {
   return `c_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+// 预设和 CC Switch 导入共用同一份配置结构，避免两条路径写出的字段不一致
+function connectionConfig(chosen, id) {
+  const subscription = chosen.kind === "subscription";
+  return {
+    version: 3,
+    providerProfile: id,
+    textProvider: subscription ? "automatic" : "openai-compatible",
+    fallbackEnabled: !subscription && chosen.protocol === "openai",
+    requestTimeoutMs: 8000,
+    pdfAiTimeoutMs: 60000,
+    pdfAiStreaming: true,
+    apiProtocol: chosen.protocol,
+    anthropicMaxTokens: 64000,
+    openaiEndpoint: chosen.endpoint,
+    openaiModel: chosen.model,
+    pdfAiModel: subscription ? chosen.model : "",
+    pdfAiAuth: chosen.auth || "api-key",
+    pdfAiOAuthModel: subscription ? chosen.model : "",
+    translationOAuthModel: subscription ? chosen.model : "",
+    openaiResponsePath: chosen.protocol === "anthropic" ? "content.0.text"
+      : chosen.protocol === "responses" ? "output_text" : "choices.0.message.content",
+    reasoningEffort: "",
+    translationReasoningEffort: ""
+  };
+}
+
 export default function SettingsPage({
   translation,
   uiSettings,
@@ -77,6 +104,7 @@ export default function SettingsPage({
   const [oauthStatus, setOauthStatus] = useState(null);
   const [revealKey, setRevealKey] = useState(false);
   const [stats, setStats] = useState(null);
+  const [ccSwitch, setCcSwitch] = useState({ open: false, loading: false, items: [], missing: false, error: "", selected: [], busy: false });
   const restoreRef = useRef(null);
 
   const connections = translation?.connections || [];
@@ -104,34 +132,13 @@ export default function SettingsPage({
   const startAdd = (preset) => {
     const chosen = preset || PRESETS[PRESETS.length - 1];
     const id = newConnectionId();
-    const subscription = chosen.kind === "subscription";
     setDraft({
       mode: "new",
       id,
       kind: chosen.kind || "api",
       name: chosen.name,
       apiKey: "",
-      config: {
-        version: 3,
-        providerProfile: id,
-        textProvider: subscription ? "automatic" : "openai-compatible",
-        fallbackEnabled: !subscription && chosen.protocol === "openai",
-        requestTimeoutMs: 8000,
-        pdfAiTimeoutMs: 60000,
-        pdfAiStreaming: true,
-        apiProtocol: chosen.protocol,
-        anthropicMaxTokens: 64000,
-        openaiEndpoint: chosen.endpoint,
-        openaiModel: chosen.model,
-        pdfAiModel: subscription ? chosen.model : "",
-        pdfAiAuth: chosen.auth || "api-key",
-        pdfAiOAuthModel: subscription ? chosen.model : "",
-        translationOAuthModel: subscription ? chosen.model : "",
-        openaiResponsePath: chosen.protocol === "anthropic" ? "content.0.text"
-          : chosen.protocol === "responses" ? "output_text" : "choices.0.message.content",
-        reasoningEffort: "",
-        translationReasoningEffort: ""
-      }
+      config: connectionConfig(chosen, id)
     });
     setModels([]);
     setRevealKey(false);
@@ -155,6 +162,59 @@ export default function SettingsPage({
     setOauthStatus(null);
     setRevealKey(false);
     setSectionView("detail");
+  };
+
+  const ccSwitchKey = (item) => item.source || item.name;
+
+  const openCcSwitch = async () => {
+    setCcSwitch({ open: true, loading: true, items: [], missing: false, error: "", selected: [], busy: false });
+    try {
+      const result = await ccSwitchPreview();
+      const rows = Array.isArray(result?.providers) ? result.providers : [];
+      const convert = globalThis.LexiLoopCcSwitch?.fromRows;
+      const items = typeof convert === "function" ? convert(rows) : [];
+      setCcSwitch(current => ({
+        ...current,
+        loading: false,
+        items,
+        missing: Boolean(result?.missing) && !items.length,
+        error: typeof convert === "function" ? "" : "导入模块未加载，请重新加载扩展",
+        selected: items.filter(item => !item.skip).map(ccSwitchKey)
+      }));
+    } catch (error) {
+      setCcSwitch(current => ({ ...current, loading: false, error: error.message || "无法读取 CC Switch" }));
+    }
+  };
+
+  const toggleCcSwitch = (key) => setCcSwitch(current => ({
+    ...current,
+    selected: current.selected.includes(key)
+      ? current.selected.filter(item => item !== key)
+      : [...current.selected, key]
+  }));
+
+  const importFromCcSwitch = async () => {
+    const picked = ccSwitch.items.filter(item => !item.skip && ccSwitch.selected.includes(ccSwitchKey(item)));
+    if (!picked.length) { showToast("先勾选要导入的连接", { tone: "error" }); return; }
+    setCcSwitch(current => ({ ...current, busy: true }));
+    let done = 0;
+    for (const [index, item] of picked.entries()) {
+      try {
+        const id = newConnectionId();
+        await saveConnection(
+          connectionConfig({ protocol: item.protocol, endpoint: item.endpoint, model: item.model, name: item.name }, id),
+          {
+            apiKey: item.apiKey,
+            activate: !connections.length && index === 0,
+            connection: { name: item.name, kind: "api", source: item.source }
+          }
+        );
+        done += 1;
+      } catch { /* 单条失败不应该中断其余导入 */ }
+    }
+    await onRefreshTranslation();
+    setCcSwitch({ open: false, loading: false, items: [], missing: false, error: "", selected: [], busy: false });
+    showToast(done === picked.length ? `已导入 ${done} 条连接` : `已导入 ${done} / ${picked.length} 条连接`);
   };
 
   const patchDraft = (patch) => setDraft((current) => current ? { ...current, ...patch } : current);
@@ -412,6 +472,10 @@ export default function SettingsPage({
               <p className="mt-2 px-1 text-[11px] text-muted-foreground">
                 订阅登录（ChatGPT / Grok）沿用已有账号，添加时会自动读取本机凭据。
               </p>
+              <button type="button" className="btn mt-2 w-full justify-start px-2.5" onClick={openCcSwitch}>
+                <Icon name="stack" size={13} className="text-muted-foreground" />
+                <span className="truncate">从 CC Switch 导入</span>
+              </button>
             </div>
           </div>
         ) : null}
@@ -573,7 +637,7 @@ export default function SettingsPage({
                   </span>
                   <input
                     type="checkbox"
-                    className="h-4 w-4 accent-[var(--brand)]"
+                    className="h-4 w-4 accent-[var(--primary)]"
                     checked={uiSettings[item.key] !== false}
                     onChange={async (event) => {
                       const value = event.target.checked;
@@ -659,6 +723,75 @@ export default function SettingsPage({
           </div>
         ) : null}
       </div>
+
+      <Modal
+        open={ccSwitch.open}
+        title="从 CC Switch 导入"
+        subtitle="只读取本机 CC Switch 的 API 供应商，不读取订阅账号的登录凭据。"
+        width={400}
+        onClose={() => setCcSwitch(current => ({ ...current, open: false }))}
+        footer={(
+          <>
+            <button type="button" className="btn" onClick={() => setCcSwitch(current => ({ ...current, open: false }))}>
+              取消
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={ccSwitch.busy || !ccSwitch.selected.length}
+              onClick={importFromCcSwitch}
+            >
+              {ccSwitch.busy ? "导入中…" : `导入 ${ccSwitch.selected.length} 条`}
+            </button>
+          </>
+        )}
+      >
+        {ccSwitch.loading ? (
+          <Spinner label="正在读取 CC Switch" />
+        ) : ccSwitch.error || ccSwitch.missing ? (
+          <p className="py-3 text-ui-sm leading-relaxed text-muted-foreground">
+            {ccSwitch.error || "没有找到 CC Switch 数据库（~/.cc-switch/cc-switch.db），或本机辅助程序尚未连接。"}
+          </p>
+        ) : !ccSwitch.items.length ? (
+          <p className="py-3 text-ui-sm text-muted-foreground">CC Switch 里没有可导入的 API 供应商。</p>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border">
+            {ccSwitch.items.map((item) => {
+              const key = ccSwitchKey(item);
+              const disabled = Boolean(item.skip);
+              return (
+                <label
+                  key={key}
+                  className={`flex items-start gap-2 border-b border-border px-3 py-2 last:border-b-0 ${disabled ? "opacity-60" : "row-hover cursor-pointer"}`}
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                    disabled={disabled}
+                    checked={!disabled && ccSwitch.selected.includes(key)}
+                    onChange={() => toggleCcSwitch(key)}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate text-ui font-medium text-foreground">{item.name}</span>
+                      {item.protocol ? (
+                        <span className="chip shrink-0">
+                          {PROTOCOLS.find(option => option.value === item.protocol)?.label || item.protocol}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="mt-0.5 block break-all text-[11px] leading-relaxed text-muted-foreground">
+                      {disabled
+                        ? item.skip
+                        : [item.endpoint, item.maskedKey, item.model].filter(Boolean).join(" · ")}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

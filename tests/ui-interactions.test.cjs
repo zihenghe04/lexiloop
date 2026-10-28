@@ -63,3 +63,20 @@ test("文献库列表不再用逐条灰色卡片，改为连续行", () => {
   assert.match(library, /className="library-row group"/);
   assert.doesNotMatch(library, /overflow-hidden rounded-lg border border-border bg-background">\s*\n\s*\{list\.map/);
 });
+
+test("设置页保留 CC Switch 导入入口，侧栏也加载了导入模块", () => {
+  const html = read("sidepanel.html");
+  assert.match(html, /<script src="cc-switch-import\.js"><\/script>/);
+  const settings = read("ui/src/pages/SettingsPage.jsx");
+  assert.match(settings, /从 CC Switch 导入/);
+  assert.match(settings, /ccSwitchPreview/);
+  // 全局模块名必须与 cc-switch-import.js 实际挂载的名字一致
+  assert.match(read("cc-switch-import.js"), /root\.LexiLoopCcSwitch = api/);
+  assert.match(settings, /globalThis\.LexiLoopCcSwitch\?\./);
+  assert.doesNotMatch(settings, /LexiLoopCcSwitchImport/);
+  // 导入必须把候选里的 Key 一起写入，否则只能得到一条没有认证的连接
+  assert.match(settings, /apiKey: item\.apiKey/);
+  // 导入沿用与预设相同的配置结构，避免两条路径字段漂移
+  assert.match(settings, /function connectionConfig\(/);
+  assert.match(settings, /config: connectionConfig\(chosen, id\)/);
+});

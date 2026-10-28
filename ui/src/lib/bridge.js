@@ -184,6 +184,14 @@ export function backupModule() {
   return globalThis.LexiLoopBackup || null;
 }
 
+export async function ccSwitchPreview() {
+  if (isPreview()) {
+    await pause(80);
+    return { ok: true, providers: [], missing: true };
+  }
+  return request("CC_SWITCH_PREVIEW", {});
+}
+
 export async function saveConnection(config, options = {}) {
   return request("SAVE_TRANSLATION_SETTINGS", {
     config,

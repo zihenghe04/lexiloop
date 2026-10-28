@@ -619,5 +619,15 @@ html, body, #root { width: 100%; min-width: 0; max-width: 100%; overflow-x: hidd
 .empty-frame, .words-page, .review-page, .library-page { min-width: 0; }
 .page-skeleton { display: grid; gap: 10px; padding: 20px 14px; }
 .page-skeleton div { height: 14px; border-radius: 7px; background: var(--muted); }
+/* 弹窗：ui.jsx 的 Modal 用这些类名，之前没有对应规则，打开时会挤进页面流 */
+.modal-root { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 14px; }
+.modal-backdrop { position: absolute; inset: 0; background: color-mix(in oklab, var(--foreground) 30%, transparent); backdrop-filter: blur(2px); }
+.modal-panel { position: relative; display: flex; width: 100%; max-height: 100%; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 18px; background: var(--background); box-shadow: 0 22px 55px -18px rgb(0 0 0 / 0.4); outline: none; }
+.modal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 13px 13px 9px; }
+.modal-heading h2 { color: var(--foreground); font-size: 13px; font-weight: 600; }
+.modal-heading p { margin-top: 3px; color: var(--muted-foreground); font-size: 11px; line-height: 1.5; }
+.modal-content { min-height: 0; overflow-y: auto; padding: 0 13px 12px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 13px 13px; border-top: 1px solid var(--border); }
+.modal-footer .btn { min-width: 72px; justify-content: center; }
 @media (hover: none) { .library-row__actions .btn { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .loading-orb { animation: none; } }
