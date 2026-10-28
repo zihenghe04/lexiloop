@@ -1,0 +1,105 @@
+.lexiloop-root,
+.lexiloop-root * {
+  box-sizing: border-box;
+  letter-spacing: 0 !important;
+}
+
+.lexiloop-bubble {
+  all: initial;
+  position: absolute;
+  z-index: 2147483646;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 10px;
+  background: #176b5d;
+  box-shadow: 0 1px 2px rgba(16, 55, 48, .12), 0 8px 22px rgba(16, 55, 48, .22);
+  color: #fff;
+  cursor: pointer;
+  font: 740 15px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px) scale(.88);
+  transform-origin: center bottom;
+  transition: opacity 150ms ease, transform 220ms cubic-bezier(.22, 1, .36, 1), background 140ms ease, box-shadow 140ms ease;
+}
+
+.lexiloop-bubble:hover { background: #105448; box-shadow: 0 1px 2px rgba(16, 55, 48, .12), 0 10px 26px rgba(16, 55, 48, .26); transform: translateY(-1px) scale(1.03); }
+.lexiloop-bubble:active { transform: translateY(1px) scale(.96); }
+.lexiloop-bubble.is-visible { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+
+.lexiloop-card {
+  position: absolute;
+  z-index: 2147483647;
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(520px, calc(100vh - 24px));
+  min-height: 150px;
+  overflow: auto;
+  border: 1px solid #e8e8e6;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 16px 44px rgba(0, 0, 0, .13);
+  color: #262626;
+  font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  opacity: 0;
+  overscroll-behavior: contain;
+  transform: translateY(9px) scale(.98);
+  transform-origin: top left;
+  transition: opacity 170ms ease, transform 250ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.lexiloop-card.is-visible { opacity: 1; transform: none; }
+.lexiloop-card p { margin: 0; }
+.lexiloop-card-head { position: sticky; top: 0; z-index: 1; display: flex; height: 46px; align-items: center; justify-content: space-between; padding: 0 12px 0 15px; border-bottom: 1px solid #efefed; background: rgba(255, 255, 255, .96); }
+.lexiloop-card-head strong { display: inline-flex; align-items: center; gap: 7px; color: #262626; font-size: 12px; font-weight: 600; }
+.lexiloop-card-head strong::before { width: 6px; height: 6px; border-radius: 50%; background: #216652; content: ""; }
+.lexiloop-card-head button { display: grid; width: 28px; height: 28px; place-items: center; border: 0; border-radius: 8px; background: transparent; color: #8a8a86; cursor: pointer; font-size: 21px; line-height: 1; transition: background 140ms ease, color 140ms ease, transform 140ms ease; }
+.lexiloop-card-head button:hover { background: rgba(38, 38, 38, .07); color: #262626; }
+.lexiloop-card-head button:active { transform: scale(.92); }
+.lexiloop-card-body { padding: 16px 16px 14px; }
+.lexiloop-card > .lexiloop-original { padding: 14px 16px 7px; color: #5f5f5c; font-size: 12px; font-weight: 400; }
+.lexiloop-term-row { margin-bottom: 14px; }
+.lexiloop-title-line { display: flex; align-items: flex-start; gap: 8px; }
+.lexiloop-original { color: #262626; font-size: 21px; font-weight: 650; line-height: 1.25; overflow-wrap: anywhere; }
+.lexiloop-phonetic { margin-top: 4px !important; color: #8a8a86; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.lexiloop-translation { color: #105448; font-size: 17px; font-weight: 600; line-height: 1.45; }
+.lexiloop-meanings { display: grid; gap: 10px; }
+.lexiloop-meaning-row { display: grid; grid-template-columns: 39px minmax(0, 1fr); gap: 8px; align-items: start; }
+.lexiloop-meaning-row > span { margin-top: 1px; color: #216652; font-size: 10px; font-style: italic; font-weight: 600; }
+.lexiloop-meaning-row > p { color: #3d3d3a; font-size: 12px; line-height: 1.55; }
+.lexiloop-recorded { display: flex; align-items: center; margin-top: 14px !important; padding-top: 11px; border-top: 1px solid #efefed; color: #8a8a86; font-size: 10.5px; }
+.lexiloop-recorded::before { width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: #216652; content: ""; }
+.lexiloop-error { padding: 0 16px 18px; color: #c0392b; font-size: 12px; }
+.lexiloop-actions { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-top: 1px solid #efefed; background: rgba(250, 250, 249, .98); }
+.lexiloop-actions > span { color: #8a8a86; font-size: 10px; }
+.lexiloop-actions button { min-height: 34px; padding: 0 11px; border: 1px solid #176b5d; border-radius: 8px; background: #176b5d; box-shadow: 0 1px 2px rgba(16, 55, 48, .1); color: #fff; cursor: pointer; font: 550 12px/1 system-ui, sans-serif; transition: background 140ms ease, box-shadow 140ms ease, transform 140ms ease; }
+.lexiloop-actions button:hover { background: #105448; }
+.lexiloop-actions button:active { box-shadow: none; transform: translateY(1px); }
+.lexiloop-spinner { width: 15px; height: 15px; border: 2px solid #d6e8e4; border-top-color: #176b5d; border-radius: 50%; animation: lexiloop-spin .7s linear infinite; }
+.lexiloop-skeleton { height: 16px; margin: 7px 16px 20px; border-radius: 5px; background: #efefed; animation: lexiloop-pulse 900ms ease-in-out infinite alternate; }
+.lexiloop-speak {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  margin-top: -3px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(38, 38, 38, .06);
+  color: #5f5f5c;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.lexiloop-speak:hover { background: rgba(38, 38, 38, .1); color: #262626; }
+.lexiloop-speak:active { transform: scale(.94); }
+.lexiloop-speak svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+@keyframes lexiloop-spin { to { transform: rotate(360deg); } }
+@keyframes lexiloop-pulse { to { opacity: .42; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lexiloop-root, .lexiloop-root *, .lexiloop-root *::before, .lexiloop-root *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

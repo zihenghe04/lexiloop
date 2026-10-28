@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LexiLoop Editable Selection Preview</title>
+  <style>
+    :root { font-family: Inter, system-ui, sans-serif; color: #182321; background: #eef1f0; }
+    body { margin: 0; padding: 48px 20px; }
+    main { max-width: 760px; margin: auto; padding: 34px; border: 1px solid #dde4e1; border-radius: 8px; background: #fff; box-shadow: 0 12px 34px rgba(24, 35, 33, .08); }
+    h1 { margin: 0 0 7px; font-size: 22px; }
+    main > p { margin: 0 0 28px; color: #68736f; font-size: 12px; }
+    .field { display: grid; gap: 7px; margin-top: 18px; }
+    label { color: #53615d; font-size: 11px; font-weight: 700; }
+    input, textarea, [contenteditable] { width: 100%; min-height: 44px; padding: 11px 13px; border: 1px solid #cbd4d0; border-radius: 7px; outline: 0; background: #fbfcfc; color: #182321; font: 14px/1.55 Inter, system-ui, sans-serif; box-sizing: border-box; }
+    textarea { min-height: 88px; resize: vertical; }
+    [contenteditable] { min-height: 64px; }
+    input:focus, textarea:focus, [contenteditable]:focus { border-color: #176b5d; box-shadow: 0 0 0 3px rgba(23, 107, 93, .12); }
+    .status { margin-top: 24px; padding: 10px 12px; border-left: 3px solid #176b5d; background: #f1f7f5; color: #53615d; font-size: 11px; }
+  </style>
+  <link rel="stylesheet" href="../content.css">
+</head>
+<body>
+  <main>
+    <h1>可编辑区域选区测试</h1>
+    <p>页面会自动选中目标文字，用于验证悬浮窗和快捷键读取共用同一选区。</p>
+    <div class="field">
+      <label for="textInput">Input</label>
+      <input id="textInput" value="Translate resilient systems inside a text input.">
+    </div>
+    <div class="field">
+      <label for="textArea">Textarea</label>
+      <textarea id="textArea">A textarea selection should behave exactly like normal article text.</textarea>
+    </div>
+    <div class="field">
+      <label for="notionBlock">Notion 风格 contenteditable</label>
+      <div id="notionBlock" contenteditable="true" role="textbox">Editable knowledge bases should preserve the selected context.</div>
+    </div>
+    <div class="status" id="selectionStatus">等待选区检测</div>
+  </main>
+  <script src="editable-preview-mocks.js"></script>
+  <script src="../content.js"></script>
+</body>
+</html>

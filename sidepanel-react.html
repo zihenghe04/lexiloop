@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LexiLoop</title>
+    <link rel="stylesheet" href="ui-dist/assets/app.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- 备份模块沿用旧实现（IIFE 暴露 window.LexiLoopBackup），React 的「数据」页调用它 -->
+    <script src="backup.js"></script>
+    <script type="module" src="ui-dist/assets/app.js"></script>
+  </body>
+</html>

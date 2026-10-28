@@ -1,0 +1,67 @@
+{
+  "manifest_version": 3,
+  "minimum_chrome_version": "119",
+  "name": "LexiLoop 划词翻译",
+  "version": "0.27.1",
+  "description": "划词或快捷键翻译，自动收录词条并记录查询次数、来源和时间。",
+  "permissions": [
+    "clipboardRead",
+    "clipboardWrite",
+    "nativeMessaging",
+    "contextMenus",
+    "downloads",
+    "offscreen",
+    "storage",
+    "unlimitedStorage",
+    "sidePanel",
+    "tabs",
+    "webRequest"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*",
+    "https://dict.youdao.com/*",
+    "https://api.mymemory.translated.net/*",
+    "https://translate.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "打开 LexiLoop",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "commands": {
+    "translate-selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+T",
+        "mac": "Alt+Shift+T"
+      },
+      "description": "翻译网页或 LexiLoop PDF 阅读器中的选区"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LexiLoop</title>
+    <link rel="stylesheet" href="ui-dist/assets/app.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- 复用既有纯逻辑模块（IIFE 挂到 globalThis）：本地 PDF 写入与备份/恢复 -->
+    <script src="pdf-library.js"></script>
+    <script src="backup.js"></script>
+    <script type="module" src="ui-dist/assets/app.js"></script>
+  </body>
+</html>

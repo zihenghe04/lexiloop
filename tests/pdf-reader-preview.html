@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="zh-CN" data-lexiloop-pdf-reader>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LexiLoop PDF 阅读器</title>
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css?v=984832551">
+  <link rel="stylesheet" href="../pdf-reader.css?v=984832551">
+  <link rel="stylesheet" href="../content.css?v=984832551">
+  <link rel="stylesheet" href="../workspace-ui.css?v=984832551">
+  <link rel="stylesheet" href="../motion.css?v=984832551">
+  <link rel="stylesheet" href="../ui-shell.css?v=984832551">
+</head>
+<body data-preview-generated="scripts/build-reader-preview.cjs">
+  <header class="reader-toolbar">
+    <div class="toolbar-leading">
+      <button class="icon-button compact" id="sidebarToggle" type="button" title="显示或隐藏侧栏" aria-label="显示或隐藏侧栏" aria-expanded="true">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+      </button>
+      <div class="reader-brand" title="LexiLoop PDF 阅读器">
+        <span class="brand-mark">L</span>
+        <div><strong>LexiLoop</strong><span>PDF 阅读器</span></div>
+      </div>
+      <div class="document-title">
+        <strong id="documentTitle">PDF 文档</strong>
+        <span id="documentMeta"></span>
+      </div>
+    </div>
+
+    <form class="url-form" id="urlForm">
+      <label class="url-field" for="urlInput">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/></svg>
+        <input id="urlInput" type="url" placeholder="输入 PDF 网址" autocomplete="off">
+      </label>
+      <button class="text-button" type="submit">打开</button>
+    </form>
+
+    <div class="toolbar-center">
+        <div class="translation-actions document-action" hidden>
+          <div class="reading-mode-switch" id="readingModeSwitch" role="radiogroup" aria-label="阅读模式">
+            <button type="button" role="radio" aria-checked="true" data-reading-mode-option="source" title="只看原文">仅原文</button>
+            <button type="button" role="radio" aria-checked="false" data-reading-mode-option="parallel" title="原文与译文左右对照">原文译文</button>
+            <button type="button" role="radio" aria-checked="false" data-reading-mode-option="translation" title="只看译文">仅译文</button>
+          </div>
+          <span class="translation-progress" id="translationProgress" role="status" aria-live="polite" hidden></span>
+          <button class="text-button translation-control" id="translationPauseButton" type="button" hidden>暂停</button>
+          <button class="text-button translation-control" id="translationPageButton" type="button" hidden>只翻本页</button>
+          <button class="translation-mode-button document-action" id="pageTranslationButton" type="button" title="把本页译文覆盖在原版面上对照" aria-label="本页版面对照翻译" aria-pressed="false" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 12h6M9 16h4"/></svg>
+            <span id="pageTranslationLabel">版面对照</span>
+          </button>
+        </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="icon-button document-action" id="findButton" type="button" title="在文档中查找（⌘/Ctrl+F）" aria-label="在文档中查找" aria-expanded="false" hidden>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+      </button>
+      <button class="icon-button document-action" id="captureAiButton" type="button" title="截图问 AI" aria-label="截图问 AI" aria-pressed="false" hidden>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="m12 7 .8 2.2L15 10l-2.2.8L12 13l-.8-2.2L9 10l2.2-.8L12 7Z"/></svg>
+      </button>
+      <button class="icon-button" id="themeButton" type="button" title="切换阅读主题" aria-label="切换阅读主题(浅色/纸张/深色)">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18V3Z" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <button class="icon-button" id="moreButton" type="button" popovertarget="moreMenu" title="更多操作" aria-label="更多操作" aria-haspopup="menu">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></svg>
+      </button>
+      <div class="toolbar-menu" id="moreMenu" popover role="menu" aria-label="更多操作">
+        <button role="menuitem" class="menu-item" id="openFileButton" type="button" title="打开本地 PDF" aria-label="打开本地 PDF">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v10H3z"/><path d="M3 7V5h7l2 2"/></svg>
+        <span>打开本地 PDF</span>
+        </button>
+        <button role="menuitem" class="menu-item document-action" id="addToLibraryButton" type="button" title="加入文献库" aria-label="加入文献库" aria-pressed="false" hidden>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4Z"/><path d="M8 8h7M8 12h5M18 8h2v12H9"/></svg>
+        <span class="when-off">加入文献库</span><span class="when-on">已在文献库 · 同步进度</span>
+        </button>
+        <button role="menuitem" class="menu-item document-action" id="indexDocumentButton" type="button" title="建立全文索引" aria-label="建立全文索引" hidden>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><ellipse cx="10" cy="6" rx="6" ry="3"/><path d="M4 6v8c0 1.7 2.7 3 6 3m6-11v5"/><path d="M4 10c0 1.7 2.7 3 6 3 1.2 0 2.3-.2 3.2-.5"/><circle cx="17" cy="17" r="3"/><path d="m19.2 19.2 2 2"/></svg>
+        <span>建立全文索引</span>
+        </button>
+        <button class="menu-item" id="knowledgeButton" type="button" role="menuitem">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM13 4h5.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H13z"/><path d="M7 8h1.5M15.5 8H17M15.5 12H17"/></svg>
+          <span>知识页</span>
+        </button>
+        <hr class="menu-divider document-action" hidden>
+        <button role="menuitem" class="menu-item document-action" id="downloadButton" type="button" title="下载 PDF" aria-label="下载 PDF" hidden>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+        <span>下载 PDF</span>
+        </button>
+        <button role="menuitem" class="menu-item document-action" id="printButton" type="button" title="打印 PDF" aria-label="打印 PDF" hidden>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5h18v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></svg>
+        <span>打印</span>
+        </button>
+      </div>
+      <button class="icon-button document-action ai-toolbar-button" id="aiPanelButton" type="button" title="打开 PDF AI" aria-label="打开 PDF AI" aria-expanded="false" hidden>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 5h14v11H9l-4 4V5Z"/><path d="m13 7 .6 1.4L15 9l-1.4.6L13 11l-.6-1.4L11 9l1.4-.6L13 7Z"/></svg>
+        <span>AI 助手</span>
+      </button>
+      <span class="toolbar-divider" aria-hidden="true"></span>
+      <button class="icon-button" id="openPanelButton" type="button" title="打开个人中心" aria-label="打开个人中心">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M14 4v16"/></svg>
+      </button>
+    </div>
+    <input id="fileInput" type="file" accept="application/pdf,.pdf" hidden>
+  </header>
+
+  <main class="reader-main" id="readerMain">
+    <section class="reader-empty" id="readerEmpty">
+      <div class="empty-icon">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M9.5 13h5M9.5 16h5"/></svg>
+      </div>
+      <h1>打开一份 PDF</h1>
+      <p>选择本地文件，或在上方输入 PDF 网址。</p>
+      <button class="primary-button" id="emptyOpenButton" type="button">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v10H3z"/><path d="M3 7V5h7l2 2"/></svg>
+        选择 PDF 文件
+      </button>
+    </section>
+
+    <section class="reader-loading" id="readerLoading" hidden aria-live="polite">
+      <span class="spinner"></span>
+      <strong>正在解析 PDF</strong>
+      <p id="loadingMessage">准备文档、目录和页面</p>
+    </section>
+
+    <section class="reader-error" id="readerError" hidden>
+      <strong>无法打开这份 PDF</strong>
+      <p id="errorMessage"></p>
+      <button class="text-button" id="errorOpenButton" type="button">选择本地文件</button>
+    </section>
+
+    <section class="document-shell" id="documentShell" hidden>
+      <aside class="reader-sidebar" id="readerSidebar">
+        <nav class="sidebar-tabs" aria-label="PDF 导航">
+          <button class="is-active" type="button" data-sidebar-tab="thumbnails">页面</button>
+          <button type="button" data-sidebar-tab="outline">大纲</button>
+          <button type="button" data-sidebar-tab="annotations">批注 <span id="annotationCount"></span></button>
+          <button type="button" data-sidebar-tab="vocab">生词 <span id="vocabCount"></span></button>
+        </nav>
+        <div class="sidebar-panel is-active thumbnail-list" id="thumbnailPanel" data-sidebar-panel="thumbnails"></div>
+        <div class="sidebar-panel outline-list" id="outlinePanel" data-sidebar-panel="outline"></div>
+        <div class="sidebar-panel annotation-panel-wrap" data-sidebar-panel="annotations">
+          <div class="annotation-filter" id="annotationFilter" role="group" aria-label="按颜色筛选批注">
+            <button type="button" class="is-active" data-color-filter="all">全部</button>
+            <button type="button" data-color-filter="yellow" title="黄色"><span class="swatch yellow"></span></button>
+            <button type="button" data-color-filter="green" title="绿色"><span class="swatch green"></span></button>
+            <button type="button" data-color-filter="pink" title="粉色"><span class="swatch pink"></span></button>
+            <button type="button" data-color-filter="blue" title="蓝色"><span class="swatch blue"></span></button>
+          </div>
+          <div class="annotation-list" id="annotationPanel"></div>
+        </div>
+        <div class="sidebar-panel vocab-panel" id="vocabPanel" data-sidebar-panel="vocab">
+          <label class="vocab-toggle"><input type="checkbox" id="vocabMarksToggle" checked><span>在正文中标出词库里的词</span></label>
+          <div class="vocab-panel-body" id="vocabPanelBody"></div>
+        </div>
+        <nav class="reader-center-links" aria-label="我的学习">
+          <span class="center-links-title">我的学习</span>
+          <button type="button" data-panel-tab="words" title="在个人中心打开词库">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M9 7.5h6"/></svg>
+            <span>词库</span><b id="centerWordCount"></b>
+          </button>
+          <button type="button" data-panel-tab="review" title="在个人中心开始复习">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/><path d="M12 8v4l2.5 1.5"/></svg>
+            <span>复习</span><b id="centerDueCount"></b>
+          </button>
+          <button type="button" data-panel-tab="library" title="在个人中心打开文献库">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h4v15H4zM10 5h4v15h-4z"/><path d="m16 6.2 3.8-1 3 13.8-3.9 1z" transform="translate(-2 0)"/></svg>
+            <span>文献库</span><b id="centerPaperCount"></b>
+          </button>
+        </nav>
+      </aside>
+      <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="关闭侧栏" tabindex="-1"></button>
+      <div class="reading-panes" id="readingPanes">
+        <div class="page-stage" id="pageStage" tabindex="-1">
+          <div class="pages-container" id="pagesContainer"></div>
+        </div>
+        <div class="pane-divider" id="paneDivider" role="separator" aria-orientation="vertical" aria-label="调整原文和译文宽度（双击恢复一半）" aria-valuemin="25" aria-valuemax="75" aria-valuenow="50" tabindex="0" hidden>
+          <button class="pane-swap" id="paneSwapButton" type="button" title="交换原文和译文" aria-label="交换原文和译文">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>
+          </button>
+        </div>
+        <section class="translation-pane" id="translationPane" aria-label="译文" hidden>
+          <div class="translation-scroll" id="translationScroll" tabindex="-1">
+            <div class="translation-doc" id="translationDoc"></div>
+          </div>
+          <div class="tp-block-tools" id="tpBlockTools" role="toolbar" aria-label="段落操作">
+            <button type="button" data-tp-action="locate" title="在原文中定位" aria-label="在原文中定位">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+            </button>
+            <button type="button" data-tp-action="zoom" title="放大查看" aria-label="放大查看">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4M11 8v6M8 11h6"/></svg>
+            </button>
+            <button type="button" data-tp-action="copy" title="复制译文" aria-label="复制">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>
+            </button>
+            <button type="button" data-tp-action="copy-source" title="复制原文" aria-label="复制原文">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7V5h10v2M9 5v14M7 19h4M14 13v-1h6v1M17 12v7M15.5 19h3"/></svg>
+            </button>
+            <button type="button" data-tp-action="ask" title="让 AI 解释这一段" aria-label="让 AI 解释这一段">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 5h14v11H9l-4 4V5Z"/><path d="m13 7 .6 1.4L15 9l-1.4.6L13 11l-.6-1.4L11 9l1.4-.6L13 7Z"/></svg>
+            </button>
+          </div>
+        </section>
+      </div>
+      <form class="find-bar" id="findBar" role="search" aria-label="在文档中查找" hidden>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+        <input id="findInput" type="search" autocomplete="off" spellcheck="false" placeholder="在文档中查找" aria-label="查找内容">
+        <span class="find-count" id="findCount" role="status" aria-live="polite"></span>
+        <button class="find-option" id="findCaseButton" type="button" title="区分大小写" aria-label="区分大小写" aria-pressed="false">Aa</button>
+        <span class="divider"></span>
+        <button class="icon-button compact" id="findPrevious" type="button" title="上一个（Shift+Enter）" aria-label="上一个匹配">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg>
+        </button>
+        <button class="icon-button compact" id="findNext" type="button" title="下一个（Enter）" aria-label="下一个匹配">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <button class="icon-button compact" id="findClose" type="button" title="关闭（Esc）" aria-label="关闭查找">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>
+        </button>
+      </form>
+      <div class="reader-dock" id="documentBar" role="toolbar" aria-label="翻页与缩放" hidden>
+        <button class="icon-button compact" id="previousPage" type="button" title="上一页" aria-label="上一页">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <label class="page-input"><input id="pageNumber" type="number" min="1" value="1" aria-label="当前页码"><span id="pageTotal">/ 1</span></label>
+        <button class="icon-button compact" id="nextPage" type="button" title="下一页" aria-label="下一页">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <span class="divider"></span>
+        <button class="icon-button compact" id="zoomOut" type="button" title="缩小" aria-label="缩小">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 12h12"/></svg>
+        </button>
+        <button class="zoom-value" id="resetZoom" type="button" title="在适应宽度与 100% 之间切换">100%</button>
+        <button class="icon-button compact" id="zoomIn" type="button" title="放大" aria-label="放大">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg>
+        </button>
+      </div>
+      <div class="link-return" id="linkReturn" hidden>
+        <button class="link-return-main" id="linkReturnButton" type="button" title="回到跳转前的阅读位置">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+          <span id="linkReturnLabel">返回</span>
+        </button>
+        <button class="link-return-close" id="linkReturnClose" type="button" title="不再显示" aria-label="关闭返回按钮">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>
+        </button>
+      </div>
+      <aside class="pdf-ai-panel" id="pdfAiPanel" aria-label="PDF AI 对话" aria-hidden="true" inert>
+        <div class="pdf-ai-resize-handle" id="aiPanelResizeHandle" role="separator" aria-label="调整 PDF AI 侧栏宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="720" aria-valuenow="356" tabindex="0"></div>
+        <header class="pdf-ai-header">
+          <div><strong id="aiConversationTitle">新对话</strong><span id="aiContextStatus">PDF AI · 当前页</span></div>
+          <div>
+            <button class="icon-button compact" id="newAiChatButton" type="button" title="新建对话" aria-label="新建 PDF AI 对话">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <button class="icon-button compact" id="aiConversationMenuButton" type="button" title="切换对话" aria-label="切换 PDF AI 对话" aria-expanded="false">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+            </button>
+            <button class="icon-button compact" id="pdfAiSettingsButton" type="button" title="PDF AI 模型设置" aria-label="打开 PDF AI 模型设置">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21h-4v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3.1 14H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1v4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+            </button>
+            <button class="icon-button compact" id="clearAiChatButton" type="button" title="清空当前对话" aria-label="清空当前 PDF AI 对话">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
+            </button>
+            <button class="icon-button compact" id="closeAiPanelButton" type="button" title="关闭" aria-label="关闭 PDF AI">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
+            </button>
+          </div>
+        </header>
+        <section class="pdf-ai-conversation-menu" id="aiConversationMenu" aria-label="PDF AI 对话记录" hidden>
+          <header><strong>对话记录</strong><span id="aiConversationCount">0 条</span></header>
+          <div class="pdf-ai-conversation-list" id="aiConversationList"></div>
+        </section>
+        <div class="pdf-ai-node-preview-layer" id="aiMessageNodePreview" hidden aria-live="polite"></div>
+        <div class="pdf-ai-message-stage">
+          <div class="pdf-ai-messages" id="aiMessages" role="log" aria-live="polite">
+            <div class="pdf-ai-empty" id="aiEmptyState">
+              <span>AI</span>
+              <strong>就这份 PDF 提问</strong>
+              <div class="pdf-ai-suggestions">
+                <button type="button" data-ai-prompt="总结当前页">总结当前页</button>
+                <button type="button" data-ai-prompt="解释当前页的核心概念">解释核心概念</button>
+                <button type="button" data-ai-prompt="列出当前页的关键结论">提取关键结论</button>
+              </div>
+            </div>
+          </div>
+          <nav class="pdf-ai-node-rail" id="aiMessageNodeRail" aria-label="对话节点导航" hidden>
+            <div id="aiMessageNodeList"></div>
+          </nav>
+        </div>
+        <form class="pdf-ai-form" id="aiQuestionForm">
+          <label for="aiQuestionInput">提问</label>
+          <div>
+            <textarea id="aiQuestionInput" rows="2" placeholder="询问当前页或整份文档"></textarea>
+            <button id="sendAiQuestionButton" type="submit" title="发送" aria-label="发送 PDF 问题">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m4 4 17 8-17 8 3-8-3-8Z"/><path d="M7 12h14"/></svg>
+            </button>
+          </div>
+        </form>
+      </aside>
+      <button class="ai-panel-backdrop" id="aiPanelBackdrop" type="button" aria-label="关闭 PDF AI" tabindex="-1"></button>
+    </section>
+  </main>
+
+  <div class="annotation-selection-toolbar" id="annotationSelectionToolbar" hidden>
+    <button type="button" id="translateSelectionButton" title="翻译所选文本">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>
+      <span>翻译</span>
+    </button>
+    <button type="button" id="askAiSelectionButton" title="让 AI 解释所选文本">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 5h14v11H9l-4 4V5Z"/><path d="m13 7 .6 1.4L15 9l-1.4.6L13 11l-.6-1.4L11 9l1.4-.6L13 7Z"/></svg>
+      <span>问 AI</span>
+    </button>
+    <button type="button" id="highlightSelectionButton" title="高亮所选文本">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 11 4 4 7-7-4-4-7 7ZM5 15l4 4M3 21h9"/></svg>
+      <span>高亮</span>
+    </button>
+    <button type="button" id="underlineSelectionButton" title="为所选文本添加下划线">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4v6a5 5 0 0 0 10 0V4M5 21h14"/></svg>
+      <span>下划线</span>
+    </button>
+    <button type="button" id="noteSelectionButton" title="为所选文本添加笔记">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16v13H8l-4 4V4Z"/><path d="M8 9h8M8 13h5"/></svg>
+      <span>笔记</span>
+    </button>
+  </div>
+
+  <dialog class="annotation-dialog" id="annotationDialog">
+    <form id="annotationForm">
+      <header>
+        <div><strong id="annotationDialogTitle">添加笔记</strong><span id="annotationQuote"></span></div>
+        <button class="icon-button compact" id="annotationDialogClose" type="button" title="关闭" aria-label="关闭笔记编辑">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <label class="annotation-note-field" for="annotationNote">
+        <span>笔记</span>
+        <textarea id="annotationNote" rows="6" placeholder="写下理解、问题或待复习内容"></textarea>
+      </label>
+      <fieldset class="annotation-styles">
+        <legend>标记样式</legend>
+        <div class="annotation-style-options">
+          <label><input type="radio" name="annotationStyle" value="highlight" checked><span>高亮</span></label>
+          <label><input type="radio" name="annotationStyle" value="underline"><span>下划线</span></label>
+          <label><input type="radio" name="annotationStyle" value="strikeout"><span>删除线</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="annotation-colors">
+        <legend>标记颜色</legend>
+        <label title="黄色"><input type="radio" name="annotationColor" value="yellow" checked><span class="swatch yellow"></span></label>
+        <label title="绿色"><input type="radio" name="annotationColor" value="green"><span class="swatch green"></span></label>
+        <label title="粉色"><input type="radio" name="annotationColor" value="pink"><span class="swatch pink"></span></label>
+        <label title="蓝色"><input type="radio" name="annotationColor" value="blue"><span class="swatch blue"></span></label>
+      </fieldset>
+      <footer>
+        <button class="danger-text-button" id="deleteAnnotationButton" type="button" hidden>删除批注</button>
+        <span></span>
+        <button class="secondary-button" id="cancelAnnotationButton" type="button">取消</button>
+        <button class="text-button" type="submit">保存</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="link-preview" id="linkPreview" role="tooltip" hidden>
+    <header><span id="linkPreviewLabel"></span><button type="button" id="linkPreviewJump">跳转</button></header>
+    <img id="linkPreviewImage" alt="链接指向的插图" hidden>
+    <p class="link-preview-text" id="linkPreviewText"></p>
+    <p class="link-preview-translation" id="linkPreviewTranslation" hidden></p>
+  </div>
+
+  <div class="vocab-tooltip" id="vocabTooltip" role="tooltip" hidden></div>
+
+  <div class="figure-lightbox" id="figureLightbox" hidden>
+    <img id="figureLightboxImage" alt="放大查看的插图">
+    <p id="figureLightboxCaption"></p>
+  </div>
+
+  <div class="reader-toast" id="readerToast" role="status"></div>
+  <script src="pdf-reader-preview-mocks.js?v=984832551"></script>
+  <script src="../vendor/marked/marked.min.js?v=984832551"></script>
+  <script src="../vendor/dompurify/purify.min.js?v=984832551"></script>
+  <script src="../vendor/katex/katex.min.js?v=984832551"></script>
+  <script src="../motion.js?v=984832551"></script>
+  <script src="../pdf-library.js?v=984832551"></script>
+  <script src="../pdf-index.js?v=984832551"></script>
+  <script src="../pdf-layout.js?v=984832551"></script>
+  <script src="../pdf-bilingual.js?v=984832551"></script>
+  <script src="../pdf-inline.js?v=984832551"></script>
+  <script src="../pdf-vocab.js?v=984832551"></script>
+  <script src="../pdf-figures.js?v=984832551"></script>
+  <script src="../pdf-ai-context.js?v=984832551"></script>
+  <script src="../pdf-ai-history.js?v=984832551"></script>
+  <script src="../pdf-ai-panel.js?v=984832551"></script>
+  <script src="../pdf-ai-renderer.js?v=984832551"></script>
+  <script src="../pdf-selection.js?v=984832551"></script>
+  <script src="../pdf-find.js?v=984832551"></script>
+  <script src="../pdf-textlayer.js?v=984832551"></script>
+  <script src="../pdf-zoom.js?v=984832551"></script>
+  <script src="../reader-center.js?v=984832551"></script>
+  <script src="../pdf-reader.js?v=984832551"></script>
+  <script src="../knowledge-ui.js?v=984832551"></script>
+  <script src="../content.js?v=984832551"></script>
+</body>
+</html>

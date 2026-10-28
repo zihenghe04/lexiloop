@@ -1,0 +1,59 @@
+/* 共享动效层：阅读器与侧边栏都在最后加载。 */
+
+/* 主题切换：新主题从中心圆形展开，旧画面保持不动 */
+html.theme-reveal::view-transition-old(root),
+html.theme-reveal::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.theme-reveal::view-transition-new(root) { z-index: 2; }
+
+/* center-morph 对话框：从中心缩放、去模糊展开；关闭时快速收拢 */
+:root { --morph-spring: cubic-bezier(.3, 1.32, .52, 1); }
+html dialog:is(.settings-dialog, .paper-dialog, .annotation-dialog, .knowledge-dialog) {
+  animation: none;
+  opacity: 0;
+  transform: scale(.9);
+  filter: blur(6px);
+  transform-origin: 50% 50%;
+  transition: opacity 150ms ease-in, transform 180ms cubic-bezier(.4, 0, 1, 1), filter 150ms ease-in,
+    overlay 180ms allow-discrete, display 180ms allow-discrete;
+}
+html dialog:is(.settings-dialog, .paper-dialog, .annotation-dialog, .knowledge-dialog)[open] {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition: opacity 200ms ease-out, transform 420ms var(--morph-spring), filter 260ms ease-out,
+    overlay 420ms allow-discrete, display 420ms allow-discrete;
+}
+@starting-style {
+  html dialog:is(.settings-dialog, .paper-dialog, .annotation-dialog, .knowledge-dialog)[open] {
+    opacity: 0;
+    transform: scale(.86);
+    filter: blur(8px);
+  }
+}
+html dialog:is(.settings-dialog, .paper-dialog, .annotation-dialog, .knowledge-dialog)::backdrop {
+  animation: none;
+  background-color: rgb(0 0 0 / 0%);
+  -webkit-backdrop-filter: blur(0);
+  backdrop-filter: blur(0);
+  transition: background-color 200ms ease, backdrop-filter 200ms ease, -webkit-backdrop-filter 200ms ease,
+    overlay 200ms allow-discrete, display 200ms allow-discrete;
+}
+html dialog:is(.settings-dialog, .paper-dialog, .annotation-dialog, .knowledge-dialog)[open]::backdrop {
+  background-color: rgb(0 0 0 / 28%);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+@starting-style {
+  html dialog:is(.settings-dialog, .paper-dialog, .annotation-dialog, .knowledge-dialog)[open]::backdrop {
+    background-color: rgb(0 0 0 / 0%);
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html dialog:is(.settings-dialog, .paper-dialog, .annotation-dialog, .knowledge-dialog),
+  html dialog:is(.settings-dialog, .paper-dialog, .annotation-dialog, .knowledge-dialog)[open],
+  html dialog:is(.settings-dialog, .paper-dialog, .annotation-dialog, .knowledge-dialog)::backdrop { transition: none; filter: none; }
+}

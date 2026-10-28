@@ -1,0 +1,238 @@
+/*
+ * 界面外壳：阅读器顶栏、阅读器侧栏、个人中心顶栏与标签的统一设计令牌和样式（0.24）。
+ * 两个页面最后加载这一份，只管"外壳"（导航、侧栏、菜单），不碰 PDF 页面、译文和 AI 面板内部。
+ *
+ * 信息架构：
+ *   阅读器顶栏 = 左：侧栏开关 + 文档标题 ｜ 中：阅读模式 ｜ 右：查找、截图问 AI、主题、更多（⋯）、AI 助手 ｜ 个人中心
+ *   阅读器侧栏 = 上：本文导航（页面 / 大纲 / 批注 / 生词）｜ 下：我的学习（词库 / 复习 / 文献库，带数量）
+ *   个人中心   = 查词 · 词库 · 复习 · 文献（学习闭环相邻，文献收尾）
+ *
+ * 令牌：--ll-* 三套主题（浅色 / 纸张 / 深色）与个人中心同一组取值，主题同步时两边是同一种材质。
+ */
+
+/* ---------- 令牌 ---------- */
+:root {
+  --ll-space-1: 4px;
+  --ll-space-2: 8px;
+  --ll-space-3: 12px;
+  --ll-space-4: 16px;
+  --ll-space-5: 24px;
+  --ll-radius-s: 6px;
+  --ll-radius-m: 8px;
+  --ll-radius-l: 12px;
+  --ll-fs-xs: 11px;
+  --ll-fs-s: 12px;
+  --ll-fs-m: 13px;
+  --ll-control: 30px;
+  --ll-dur-fast: 120ms;
+  --ll-dur: 220ms;
+  --ll-ease: cubic-bezier(.22, 1, .36, 1);
+
+  --ll-bg: #f5f5f4;
+  --ll-chrome: rgb(250 250 249 / 86%);
+  --ll-surface: #ffffff;
+  --ll-sidebar: #fafaf9;
+  --ll-line: #e7e6e3;
+  --ll-line-strong: #d9d8d4;
+  --ll-ink: #262626;
+  --ll-muted: #5f5f5c;
+  --ll-subtle: #8a8a86;
+  --ll-accent: #216652;
+  --ll-accent-ink: #ffffff;
+  --ll-accent-soft: #e9f2ee;
+  --ll-hover: rgb(38 38 38 / 4.5%);
+  --ll-selected: rgb(38 38 38 / 7%);
+  --ll-track: rgb(38 38 38 / 5.5%);
+  --ll-shadow-pop: 0 1px 2px rgb(0 0 0 / 4%), 0 12px 32px rgb(0 0 0 / 10%);
+  --ll-shadow-thumb: 0 1px 2px rgb(0 0 0 / 7%), 0 0 0 .5px rgb(0 0 0 / 5%);
+}
+:is(html[data-reader-theme="sepia"], :root[data-theme="sepia"]) {
+  --ll-bg: #eeede7;
+  --ll-chrome: rgb(247 246 242 / 88%);
+  --ll-surface: #f9f8f5;
+  --ll-sidebar: #f3f2ed;
+  --ll-line: #e2e1db;
+  --ll-line-strong: #d3d2cb;
+  --ll-ink: #1f1e1d;
+  --ll-muted: #5f5e58;
+  --ll-subtle: #8a8982;
+  --ll-accent-soft: rgb(33 102 82 / 10%);
+  --ll-hover: rgb(31 30 29 / 4.5%);
+  --ll-selected: rgb(31 30 29 / 7.5%);
+  --ll-track: rgb(31 30 29 / 6%);
+}
+:is(html[data-reader-theme="dark"], :root[data-theme="dark"]) {
+  --ll-bg: #211e21;
+  --ll-chrome: rgb(38 35 38 / 88%);
+  --ll-surface: #2f2c2f;
+  --ll-sidebar: #262326;
+  --ll-line: #3a363a;
+  --ll-line-strong: #4d494d;
+  --ll-ink: #e4dfda;
+  --ll-muted: #b3aeb0;
+  --ll-subtle: #8c878a;
+  --ll-accent: #5fb39a;
+  --ll-accent-ink: #10221b;
+  --ll-accent-soft: rgb(124 196 168 / 13%);
+  --ll-hover: rgb(228 223 218 / 5%);
+  --ll-selected: rgb(228 223 218 / 9%);
+  --ll-track: rgb(0 0 0 / 22%);
+  --ll-shadow-pop: 0 1px 2px rgb(0 0 0 / 30%), 0 14px 36px rgb(0 0 0 / 45%);
+  --ll-shadow-thumb: 0 1px 2px rgb(0 0 0 / 40%), 0 0 0 .5px rgb(255 255 255 / 6%);
+}
+
+/* ======================= 阅读器 ======================= */
+html[data-lexiloop-pdf-reader] {
+  --toolbar-height: 52px;
+  --sidebar-width: 236px;
+  --chrome-bg: var(--ll-chrome);
+}
+
+/* ---- 顶栏：左 / 中 / 右三区，阅读模式始终居中 ---- */
+html[data-lexiloop-pdf-reader] .reader-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: var(--ll-space-3);
+  height: var(--toolbar-height);
+  padding: 0 var(--ll-space-3) 0 var(--ll-space-2);
+  border-bottom: 1px solid var(--ll-line);
+  background: var(--ll-chrome);
+  box-shadow: none;
+  color: var(--ll-ink);
+}
+.toolbar-leading { grid-column: 1; min-width: 0; gap: var(--ll-space-2); }
+.reader-toolbar .url-form, .toolbar-center { grid-column: 2; grid-row: 1; }
+.toolbar-center { display: flex; justify-content: center; min-width: 0; }
+html[data-lexiloop-pdf-reader] .toolbar-actions { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 2px; }
+body.has-document .reader-brand { display: none; }
+.document-title { gap: var(--ll-space-2); }
+.document-title strong { max-width: min(34vw, 520px); overflow: hidden; color: var(--ll-ink); font-size: var(--ll-fs-m); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.document-title span { color: var(--ll-subtle); font-size: var(--ll-fs-xs); white-space: nowrap; }
+
+html[data-lexiloop-pdf-reader] .reader-toolbar .icon-button {
+  width: var(--ll-control); height: var(--ll-control); border-radius: var(--ll-radius-m);
+  color: var(--ll-muted); background: transparent;
+  transition: background var(--ll-dur-fast) ease, color var(--ll-dur-fast) ease, transform var(--ll-dur-fast) var(--ll-ease);
+}
+html[data-lexiloop-pdf-reader] .reader-toolbar .icon-button svg { width: 17px; height: 17px; }
+html[data-lexiloop-pdf-reader] .reader-toolbar .icon-button:hover { background: var(--ll-hover); color: var(--ll-ink); }
+html[data-lexiloop-pdf-reader] .reader-toolbar .icon-button:is([aria-pressed="true"], [aria-expanded="true"]):not(.ai-toolbar-button, #sidebarToggle) { background: var(--ll-selected); color: var(--ll-ink); }
+#moreButton:popover-open, #moreButton:has(+ #moreMenu:popover-open) { background: var(--ll-selected); color: var(--ll-ink); }
+.reader-toolbar .toolbar-divider { display: block; width: 1px; height: 18px; margin: 0 var(--ll-space-1); background: var(--ll-line); }
+
+/* 阅读模式：一条浅色轨道上的分段，选中项是白色滑片 */
+html[data-lexiloop-pdf-reader] .translation-actions { gap: var(--ll-space-2); padding: 0; border: 0; background: transparent; }
+html[data-lexiloop-pdf-reader] .reading-mode-switch { padding: 3px; border: 0; border-radius: 10px; background: var(--ll-track); }
+html[data-lexiloop-pdf-reader] .reading-mode-switch button { height: 26px; padding: 0 12px; border-radius: 7px; color: var(--ll-muted); font-size: var(--ll-fs-s); font-weight: 550; }
+html[data-lexiloop-pdf-reader] .reading-mode-switch button[aria-checked="true"] { color: var(--ll-ink); }
+html[data-lexiloop-pdf-reader] #pageTranslationButton { height: 32px; padding: 0 10px; border-radius: var(--ll-radius-m); color: var(--ll-muted); }
+html[data-lexiloop-pdf-reader] #pageTranslationButton:hover { background: var(--ll-hover); color: var(--ll-ink); }
+html[data-lexiloop-pdf-reader] #pageTranslationButton[aria-pressed="true"] { background: var(--ll-selected); color: var(--ll-ink); box-shadow: none; }
+
+/* AI 助手：唯一的主色按钮 */
+html[data-lexiloop-pdf-reader] .reader-toolbar .ai-toolbar-button {
+  width: auto; height: var(--ll-control); margin: 0 2px 0 6px; padding: 0 12px 0 10px; gap: 6px;
+  border-radius: 999px; background: var(--ll-accent); color: var(--ll-accent-ink); font-size: var(--ll-fs-s); font-weight: 600;
+}
+html[data-lexiloop-pdf-reader] .reader-toolbar .ai-toolbar-button:hover { background: color-mix(in srgb, var(--ll-accent) 88%, #000); color: var(--ll-accent-ink); }
+html[data-lexiloop-pdf-reader] .reader-toolbar .ai-toolbar-button[aria-expanded="true"] { background: var(--ll-accent-soft); color: var(--ll-accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ll-accent) 40%, transparent); }
+
+/* 「更多」菜单：popover + 锚点定位，挂在 ⋯ 按钮右下 */
+#moreButton { anchor-name: --ll-more; }
+.toolbar-menu {
+  position: fixed; position-anchor: --ll-more; inset: auto; top: anchor(bottom); right: anchor(right);
+  margin: 6px 0 0; min-width: 208px; padding: var(--ll-space-1);
+  border: 1px solid var(--ll-line); border-radius: var(--ll-radius-l);
+  background: var(--ll-surface); color: var(--ll-ink); box-shadow: var(--ll-shadow-pop);
+  opacity: 0; transform: translateY(-4px) scale(.98); transform-origin: top right;
+  transition: opacity var(--ll-dur-fast) ease, transform var(--ll-dur) var(--ll-ease), overlay var(--ll-dur) allow-discrete, display var(--ll-dur) allow-discrete;
+}
+.toolbar-menu:popover-open { display: grid; opacity: 1; transform: none; }
+@starting-style { .toolbar-menu:popover-open { opacity: 0; transform: translateY(-4px) scale(.98); } }
+.menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; height: 34px; padding: 0 10px;
+  border: 0; border-radius: var(--ll-radius-m); background: transparent; color: var(--ll-ink);
+  font-size: var(--ll-fs-m); text-align: left; cursor: pointer;
+}
+.menu-item svg { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: var(--ll-muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--ll-hover); outline: none; }
+.menu-item:disabled { opacity: .45; cursor: default; }
+.menu-item .when-on, .menu-item[aria-pressed="true"] .when-off { display: none; }
+.menu-item[aria-pressed="true"] .when-on { display: inline; }
+.menu-item[aria-pressed="true"] svg { stroke: var(--ll-accent); }
+.menu-divider { height: 1px; margin: var(--ll-space-1) 6px; border: 0; background: var(--ll-line); }
+
+/* ---- 侧栏 ---- */
+html[data-lexiloop-pdf-reader] .reader-sidebar {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  border-right: 1px solid var(--ll-line);
+  background: var(--ll-sidebar);
+}
+html[data-lexiloop-pdf-reader] .sidebar-tabs {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px;
+  margin: var(--ll-space-3) var(--ll-space-3) var(--ll-space-2); padding: 3px;
+  border: 0; border-radius: 10px; background: var(--ll-track);
+}
+html[data-lexiloop-pdf-reader] .sidebar-tabs button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 26px;
+  border-radius: 7px; color: var(--ll-muted); font-size: var(--ll-fs-s); font-weight: 550;
+  transition: background var(--ll-dur-fast) ease, color var(--ll-dur-fast) ease, box-shadow var(--ll-dur-fast) ease;
+}
+html[data-lexiloop-pdf-reader] .sidebar-tabs button:hover { color: var(--ll-ink); background: transparent; }
+html[data-lexiloop-pdf-reader] .sidebar-tabs button.is-active { background: var(--ll-surface); color: var(--ll-ink); box-shadow: 0 1px 2px rgb(0 0 0 / 8%), 0 0 0 .5px rgb(0 0 0 / 4%); }
+html[data-lexiloop-pdf-reader] :is(#annotationCount, #vocabCount):not(:empty) {
+  display: inline-grid; min-width: 15px; height: 15px; margin: 0; padding: 0 4px; place-items: center;
+  border-radius: 999px; background: transparent; color: var(--ll-subtle); font-size: 10.5px; font-weight: 500;
+}
+.reader-sidebar > .sidebar-panel { grid-row: 2; min-height: 0; }
+
+/* 我的学习：侧栏底部，和本文导航分开；数量右对齐，待复习有数时用主色点出 */
+html[data-lexiloop-pdf-reader] .reader-center-links {
+  grid-template-columns: minmax(0, 1fr);
+  grid-row: 3; display: grid; gap: 1px; margin: 0; padding: var(--ll-space-2) var(--ll-space-2) var(--ll-space-3);
+  border-top: 1px solid var(--ll-line); background: var(--ll-sidebar);
+}
+.center-links-title { padding: 2px 8px 4px; color: var(--ll-subtle); font-size: var(--ll-fs-xs); font-weight: 600; letter-spacing: .02em; }
+html[data-lexiloop-pdf-reader] .reader-center-links button {
+  display: flex; align-items: center; gap: 10px; width: 100%; height: 32px; padding: 0 8px;
+  border: 0; border-radius: var(--ll-radius-m); background: transparent; color: var(--ll-muted);
+  font-size: var(--ll-fs-m); font-weight: 500; text-align: left; box-shadow: none;
+  transition: background var(--ll-dur-fast) ease, color var(--ll-dur-fast) ease;
+}
+.reader-center-links button svg { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; opacity: .85; }
+.reader-center-links button span { flex: 1 1 auto; }
+.reader-center-links button b { color: var(--ll-subtle); font-size: var(--ll-fs-xs); font-weight: 500; font-variant-numeric: tabular-nums; }
+.reader-center-links button b.is-attention { min-width: 18px; height: 18px; padding: 0 6px; border-radius: 999px; background: var(--ll-accent); color: var(--ll-accent-ink); line-height: 18px; text-align: center; font-weight: 600; }
+html[data-lexiloop-pdf-reader] .reader-center-links button:hover { background: var(--ll-hover); color: var(--ll-ink); }
+
+/* 侧栏内容沿用同一套中性色 */
+html[data-lexiloop-pdf-reader] .outline-level button:hover, html[data-lexiloop-pdf-reader] .thumbnail-button:hover { background: var(--ll-hover); }
+html[data-lexiloop-pdf-reader] .thumbnail-button canvas { box-shadow: var(--ll-shadow-thumb); }
+html[data-lexiloop-pdf-reader] .thumbnail-button.is-active canvas { box-shadow: 0 0 0 2px var(--ll-accent), var(--ll-shadow-thumb); }
+html[data-lexiloop-pdf-reader] .thumbnail-button.is-active > span { background: var(--ll-accent); color: var(--ll-accent-ink); }
+
+/* 底部翻页胶囊同材质 */
+html[data-lexiloop-pdf-reader] .reader-dock { border-color: var(--ll-line); background: var(--ll-chrome); box-shadow: var(--ll-shadow-pop); }
+
+@media (max-width: 1100px) {
+  html[data-lexiloop-pdf-reader] .reading-mode-switch button { padding: 0 9px; }
+  #pageTranslationButton span { display: none; }
+}
+@media (max-width: 900px) {
+  html[data-lexiloop-pdf-reader] .reader-toolbar { grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--ll-space-2); }
+  .document-title span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toolbar-menu { transition: none; }
+}
+
+/* ======================= 个人中心（侧边面板） ======================= */
+html[data-workspace="personal"] .app-header { border-bottom: 0; }
+html[data-workspace="personal"] .header-actions { gap: 2px; }
+/* 待复习有数时，标签上的数字用主色小圆点托起，提醒但不喧宾夺主 */
+.tab[data-tab="review"] span.is-attention { min-width: 16px; background: var(--ll-accent); color: var(--ll-accent-ink); font-weight: 600; border-radius: 999px; }
+
+/* 阅读器浅色主题的舞台底色改成与外壳同一族的中性灰 */
+html[data-lexiloop-pdf-reader]:not([data-reader-theme]) { --stage-bg: #ebebe9; }
+html[data-lexiloop-pdf-reader] .reading-mode-switch::before { background: var(--ll-surface); box-shadow: 0 1px 2px rgb(0 0 0 / 8%), 0 0 0 .5px rgb(0 0 0 / 4%); }
+html[data-lexiloop-pdf-reader] #pageTranslationButton svg { width: 16px; height: 16px; flex: 0 0 auto; }

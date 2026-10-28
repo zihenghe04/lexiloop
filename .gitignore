@@ -1,0 +1,14 @@
+# Dependencies and scratch
+node_modules/
+tmp/
+*.noindex/
+.DS_Store
+*.log
+*.swp
+*~
+# Local preview leftovers
+tests/_preview-before.html
+# Large binaries that are not part of the extension
+*.zip
+*.crx
+*.pem
