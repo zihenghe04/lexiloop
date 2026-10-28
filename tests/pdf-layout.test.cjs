@@ -116,3 +116,66 @@ test("formulas and table rows are not sent for translation", () => {
   ];
   assert.deepEqual(buildTranslationBlocks(items, 612), []);
 });
+
+test("带单位上标的作者行仍识别为 author，姓名一个都不丢", () => {
+  // 真实论文里姓名后面紧跟单位编号（Ziheng He1,2）。数字紧贴姓名的 e，
+  // 早期正则用 \b 收尾时词边界不成立，一个姓名都匹配不到，
+  // 整行被拆成单姓名短块后又按「插图标签」删掉，作者名单就残缺了。
+  const items = [
+    { text: "Ziheng He", x: 100, top: 40, width: 46, height: 9 },
+    { text: "1,2", x: 148, top: 38, width: 12, height: 6 },
+    { text: "Yixiang Chen", x: 210, top: 40, width: 68, height: 9 },
+    { text: "1,3", x: 280, top: 38, width: 12, height: 6 },
+    { text: "Ning Yang", x: 340, top: 40, width: 52, height: 9 },
+    { text: "1,4", x: 394, top: 38, width: 12, height: 6 },
+    { text: "We present a system for learning dexterous manipulation from demos", x: 100, top: 120, width: 380, height: 10 }
+  ];
+  const author = buildTranslationBlocks(items, 595).find((block) => block.kind === "author");
+  assert.ok(author, "带编号的作者行应该识别为 author");
+  assert.match(author.text, /Ziheng He/);
+  assert.match(author.text, /Yixiang Chen/);
+  assert.match(author.text, /Ning Yang/);
+});
+
+test("姓名间距很大的作者行不按分栏间隙拆开，每行都完整保留", () => {
+  const rows = [
+    [["Ziheng He", 0], ["1,2", 1], ["Yixiang Chen", 30], ["1,3", 1], ["Ning Yang", 34], ["1,4", 1]],
+    [["Zhanqian Wu", 0], ["5", 1], ["Qisen Ma", 12], ["1,3", 1], ["Yuan Xu", 14], ["1,3", 1], ["Jiabing Yang", 14], ["1,3", 1]],
+    [["Jing Liu", 0], ["7", 1], ["Nianfeng Liu", 40], ["7", 1], ["Yan Huang", 44], ["1,3,7,*", 1]]
+  ];
+  const items = [];
+  rows.forEach((row, index) => {
+    let x = 100;
+    for (const [text, gapBefore] of row) {
+      x += gapBefore;
+      items.push({ text, x, top: 40 + index * 14, width: text.length * 4.7, height: 9 });
+      x += text.length * 4.7;
+    }
+  });
+  items.push({ text: "We present a system for learning dexterous manipulation from demos", x: 100, top: 140, width: 380, height: 10 });
+  const authors = buildTranslationBlocks(items, 595).filter((block) => block.kind === "author");
+  assert.equal(authors.length, 3);
+  assert.match(authors[0].text, /Ning Yang/);
+  assert.match(authors[1].text, /Jiabing Yang/);
+  assert.match(authors[2].text, /Yan Huang/);
+});
+
+test("机构行不会被当成作者行", () => {
+  const items = [
+    { text: "1School of Computer Science, Peking University", x: 100, top: 40, width: 330, height: 8 },
+    { text: "2Beijing Academy of Artificial Intelligence", x: 100, top: 50, width: 300, height: 8 }
+  ];
+  const blocks = buildTranslationBlocks(items, 595);
+  assert.ok(blocks.length >= 1);
+  blocks.forEach((block) => assert.notEqual(block.kind, "author"));
+});
+
+test("多词大标题不会被当成作者行", () => {
+  const items = [
+    { text: "Deep Residual Learning For Image Recognition", x: 120, top: 30, width: 340, height: 17 },
+    { text: "We present a system for learning dexterous manipulation from demos", x: 100, top: 120, width: 380, height: 10 }
+  ];
+  const title = buildTranslationBlocks(items, 595).find((block) => /Deep Residual/.test(block.text));
+  assert.ok(title);
+  assert.equal(title.kind, "title");
+});

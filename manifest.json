@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "minimum_chrome_version": "119",
   "name": "LexiLoop 划词翻译",
-  "version": "0.27.1",
+  "version": "0.27.2",
   "description": "划词或快捷键翻译，自动收录词条并记录查询次数、来源和时间。",
   "permissions": [
     "clipboardRead",

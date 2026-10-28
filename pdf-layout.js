@@ -195,6 +195,24 @@
     const columnEndCount = (x) => [-1, 0, 1].reduce((total, offset) => total + (rightCounts.get(Math.round(x / 2) + offset) || 0), 0);
     const lines = [];
     rowSegments.forEach((segments) => {
+      // 作者行整行是一个语义单元：姓名之间的大间距只是对齐排版，不能当成分栏间隙拆开。
+      // 一旦拆开，每个姓名都是独立短块，既认不出作者行，又会被「插图标签」规则删掉，
+      // 最后只剩中间几行被送去音译，作者名单就残缺了。
+      const rowItems = segments.flatMap((segment) => segment.items).sort((a, b) => a.x - b.x);
+      const rowText = joinSegmentText(rowItems);
+      if (looksLikeAuthorLine(rowText)) {
+        lines.push({
+          text: rowText,
+          table: false,
+          author: true,
+          x: Math.min(...rowItems.map((item) => item.x)),
+          right: Math.max(...rowItems.map((item) => item.x + item.width)),
+          top: Math.min(...rowItems.map((item) => item.top)),
+          bottom: Math.max(...rowItems.map((item) => item.top + item.height)),
+          height: median(rowItems.map((item) => item.height))
+        });
+        return;
+      }
       // 一行被切成 4 段以上，多半是表格行：保留原样，不翻译
       const tableRow = segments.length >= 4;
       const merged = [];
@@ -226,6 +244,28 @@
     });
     lines.sort((a, b) => a.top - b.top || a.x - b.x);
 
+    // 正文字号：按字符数加权的中位数（插图标签行数多但字符少，不会拉低）
+    const bodyHeight = weightedMedian(lines.map((line) => [line.height, line.text.length]));
+    // 字号明显偏离正文的行不可能是作者名：偏大的多词大标题，偏小的是图例和坐标轴标签
+    lines.forEach((line) => {
+      if (!line.author || !bodyHeight) return;
+      if (line.height >= bodyHeight * 1.22 || line.height < bodyHeight * 0.82) line.author = false;
+    });
+    // 作者区一般连着好几行，末行常常只剩一两位作者（Nianfeng Liu6, Yan Huang1,2,6,*）。
+    // 单看不足 3 个姓名会被判成正文送去音译，但紧挨着已识别的作者行、字号一致，应一起按作者处理。
+    const byTop = [...lines].sort((a, b) => a.top - b.top || a.x - b.x);
+    for (let index = 1; index < byTop.length; index += 1) {
+      const previous = byTop[index - 1];
+      const line = byTop[index];
+      if (line.author || !previous.author) continue;
+      const height = Math.max(line.height, previous.height);
+      if (Math.abs(line.height - previous.height) > height * 0.25) continue;
+      const gap = line.top - (previous.top + previous.height);
+      if (gap < -height * 0.5 || gap > Math.max(4, height * 1.6)) continue;
+      if (!looksLikeNameLine(line.text)) continue;
+      line.author = true;
+    }
+
     const blocks = [];
     for (const line of lines) {
       let target = null;
@@ -245,8 +285,6 @@
     }
 
     // 插图里的坐标轴、图例等小字：明显小于正文字号的短文本保留原样，不盖住插图。
-    // 正文字号：按字符数加权的中位数（插图标签行数多但字符少，不会拉低）
-    const bodyHeight = weightedMedian(lines.map((line) => [line.height, line.text.length]));
     return blocks
       .map(finishBlock)
       .map((block) => ({ ...block, kind: classifyBlock(block, bodyHeight) }))
@@ -262,11 +300,36 @@
       .map((block) => ({ ...block, viewportWidth: Number(viewportWidth) || 0 }));
   }
 
+  // 机构名里的词对（Peking University、Computer Science）长得和人名一样，靠关键词排除
+  const AFFILIATION_KEYWORD = /\b(?:Universit(?:y|ies)|Institute|Institutes|School|Department|College|Faculty|Laborator(?:y|ies)|Academy|Hospital)\b/;
+  // 姓名后面通常紧跟单位上标（He1,2、Wu5），所以结尾不能用 \b：
+  // 「e」和「1」都是单词字符，边界不成立，那样连一个姓名都匹配不到。
+  const NAME_PAIR_PATTERN = /\b[A-Z][a-z]{1,}(?:[-'][A-Z][a-z]+)?\s+[A-Z][a-z]{1,}(?:[-'][A-Z][a-z]+)?(?![a-z])/g;
+
+  function countNamePairs(value) {
+    return (String(value || "").match(NAME_PAIR_PATTERN) || []).length;
+  }
+
   function looksLikeAuthorLine(value) {
     const text = String(value || "").trim();
     if (!text || text.length > 600 || /[.!?;:]/.test(text)) return false;
-    const namePairs = text.match(/\b[A-Z][a-z]{1,}(?:[-'][A-Z][a-z]+)?\s+[A-Z][a-z]{1,}(?:[-'][A-Z][a-z]+)?\b/g) || [];
-    return namePairs.length >= 3;
+    // 机构行里同样有成串的大写词对，不先排除就会把单位说明当成作者姓名保留下来。
+    if (isAffiliationBlock(text) || AFFILIATION_KEYWORD.test(text)) return false;
+    const pairs = countNamePairs(text);
+    if (pairs < 3) return false;
+    // 单位上标（He1,2）和作者分隔符（A, B）是作者行的强信号；
+    // 两者都没有时要求整行几乎只有姓名，否则图例里并排的名词（Visual Semantic …）会被算成作者。
+    if (/\d|[,;&]/.test(text)) return true;
+    const words = text.match(/[A-Za-z][A-Za-z'’-]*/g) || [];
+    return words.length <= pairs * 2;
+  }
+
+  // 只有一两个姓名的一行。单独判断不够可靠，只用来给已识别的作者区续行。
+  function looksLikeNameLine(value) {
+    const text = String(value || "").trim();
+    if (!text || text.length > 200 || /[.!?;:]/.test(text)) return false;
+    if (isAffiliationBlock(text) || AFFILIATION_KEYWORD.test(text)) return false;
+    return countNamePairs(text) >= 1;
   }
 
   function isAuthorBlock(block, bodyHeight) {
@@ -297,6 +360,7 @@
   // title：论文大标题；heading：小节标题；caption：图注/表注；footnote：脚注；body：正文
   function classifyBlock(block, bodyHeight) {
     const text = String(block.text || "");
+    if (block.author) return "author";
     if (CAPTION_PATTERN.test(text)) return "caption";
     if (isAuthorBlock(block, bodyHeight)) return "author";
     // 通讯作者/贡献说明通常以星号或符号开头；先于机构识别，避免被“Corresponding authors”误判为机构。
@@ -352,8 +416,11 @@
       lineHeight: line.height,
       characters: line.text.length,
       table: line.table,
+      author: Boolean(line.author),
       listItem: LIST_MARKER_PATTERN.test(line.text),
-      closed: false
+      // 作者行独立成块：它和机构行、摘要的垂直距离常常很近，
+      // 合并后整块会被当成正文送去翻译，姓名就被音译或改写了。
+      closed: Boolean(line.author)
     };
   }
 
@@ -439,6 +506,7 @@
       height: Math.max(block.lineHeight, block.bottom - block.top),
       lineHeight: block.lineHeight,
       lineCount: block.lines.length,
+      author: Boolean(block.author),
       table: block.table
     };
   }

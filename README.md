@@ -1,6 +1,6 @@
 # LexiLoop 划词翻译
 
-一个可直接加载的 Chrome Manifest V3 扩展，做划词翻译、英文 PDF 对照阅读和个人词库。当前版本为 `0.27.1`，版本记录见 [CHANGELOG.md](CHANGELOG.md)。
+一个可直接加载的 Chrome Manifest V3 扩展，做划词翻译、英文 PDF 对照阅读和个人词库。当前版本为 `0.27.2`，版本记录见 [CHANGELOG.md](CHANGELOG.md)。
 需要 Chrome 119 或更高版本。
 
 > **相关项目 · AI Bro** &nbsp; [![AI Bro stars](https://img.shields.io/github/stars/zihenghe04/AIBro?style=social)](https://github.com/zihenghe04/AIBro)
@@ -36,16 +36,93 @@
 - 翻译成功后自动收录，并记录累计次数、来源、上下文和精确时间
 - 词库搜索、按次数/时间/字母排序、删除、JSON 导出和间隔复习
 
-## 安装
+## 下载与安装
 
-1. 在 Chrome 打开 `chrome://extensions/`。
-2. 开启右上角“开发者模式”。
-3. 点击“加载已解压的扩展程序”。
-4. 选择本仓库根目录（含 `manifest.json` 的那一层）。
+LexiLoop 没有上架 Chrome 应用商店，需要手动下载后加载到浏览器，全程约两分钟。要求桌面版 Chrome 119 或更高（Windows / macOS / Linux 均可，Chrome 移动版不支持扩展）。
 
-界面源码在 `ui/`，构建产物在 `ui-dist/`。直接加载仓库根目录即可使用，不需要先构建。修改 `ui/` 后需要运行 `npm --prefix ui install && npm --prefix ui run build`。
+### 第一步：把项目下载到本机
 
-更新文件后，在扩展管理页点击 LexiLoop 的刷新按钮。建议固定扩展图标，点击图标会打开右侧个人中心。
+两种方式选一种。**下载后请放到一个长期保留的固定位置**，例如 `~/Applications/lexiloop`，不要留在下载文件夹里。
+
+**方式 A：下载 ZIP（不需要装 Node）**
+
+1. 打开 [github.com/zihenghe04/lexiloop](https://github.com/zihenghe04/lexiloop)。
+2. 点绿色 `Code` 按钮 → `Download ZIP`。
+3. 解压，得到一个 `lexiloop-main` 文件夹。
+
+**方式 B：git clone（以后可以用 `git pull` 更新）**
+
+```bash
+git clone https://github.com/zihenghe04/lexiloop.git
+```
+
+> **路径确定后不要再移动或改名。** LexiLoop 没有在 `manifest.json` 里固定扩展 ID，Chrome 是按加载路径算出 ID 的。换个路径就等于装了一个新扩展，原 ID 下的词库、文献库、PDF 原件、批注和模型密钥都读不到。确实要移动：先在「设置 → 数据 → 生成完整备份」，移动并重新加载后再「恢复备份」。
+
+### 第二步：加载到 Chrome
+
+1. 地址栏打开 `chrome://extensions/`。
+2. 打开右上角的**开发者模式**开关。
+3. 点左上角出现的**加载已解压的扩展程序**。
+4. 在文件选择框里选中第一步的**文件夹本身**——点进去应该能直接看到 `manifest.json`、`background.js` 和 `icons/`。选错层级会提示「清单文件缺失或不可读取」。
+5. 列表里出现「LexiLoop 划词翻译」即加载成功。
+6. 点浏览器工具栏的拼图图标，把 LexiLoop 固定到工具栏，方便随时打开。
+
+### 第三步：确认真的能用了
+
+三件事都成立就装好了：
+
+- 点工具栏的 LexiLoop 图标，右侧弹出个人中心，顶部能在「查词 / 词库 / 文献 / 复习」之间切换。
+- 打开任意英文网页，选中一段文字，旁边出现「译」按钮，点击能出译文。
+- 按 `Alt+Shift+T` 也能翻译当前选区。
+
+到这里**不需要填写任何 API Key**：内置的 Google / MyMemory 免费翻译和有道词典默认可用。具体用法见下面的[快速开始](#快速开始)。
+
+### 可选：接自己的模型（含订阅登录）
+
+只有当你想用更好的模型翻译、或者要用 PDF AI 时才需要配置。在个人中心右上角打开「设置 → 模型 → 添加连接」：
+
+- **自定义 API**：填服务地址、API Key，选协议和模型。支持 OpenAI Chat Completions、OpenAI Responses、Anthropic Messages 三种协议。
+- **订阅登录**：用 ChatGPT 或 Grok 账号登录，不需要 API Key。**这一项需要先注册本机辅助程序**，见下。
+- **从 CC Switch 导入**：如果你装过 [CC Switch](https://github.com/farion1231/cc-switch)，可以直接导入它里面的 API 供应商。
+
+**订阅登录的一次性准备（仅 macOS Chrome）**
+
+1. 在 `chrome://extensions/` 找到 LexiLoop，复制它下面那串 32 位小写字母的**扩展 ID**。
+2. 打开终端，进入项目文件夹，把 ID 换成你复制的那串：
+
+```bash
+cd ~/Applications/lexiloop
+node native/install.cjs 你的扩展ID
+```
+
+3. 回到 `chrome://extensions/` 点 LexiLoop 的刷新按钮。之后在设置里点「订阅登录」就能正常登录。
+
+这一步需要 Node.js 18 或更高。脚本目前只支持 macOS Chrome；Windows 和 Linux 请使用 API Key 方式，翻译和 PDF AI 同样可用。
+
+### 更新到新版本
+
+1. 更新文件：ZIP 方式重新下载解压并覆盖原文件夹（保持同一路径）；git 方式执行 `git pull`。
+2. 在 `chrome://extensions/` 点 LexiLoop 卡片上的刷新按钮。
+3. 关掉右侧面板再重新打开；已经打开的 PDF 页面也要刷新一次。
+
+已保存的配置、词库、文献和密钥都在本地存储里，正常更新不会丢。
+
+### 卸载与迁移
+
+在 `chrome://extensions/` 点「移除」即可。本地数据会随扩展一起删除，需要保留请先在「设置 → 数据」里点「生成完整备份」（备份包含词库、文献、PDF 原件、索引、批注和 AI 会话，**不包含 API Key 和登录凭据**）。
+
+想换机器时：在旧机器生成备份 → 在新机器按第二步装好 → 打开「设置 → 数据 → 恢复备份」→ 重新填写 API Key。
+
+### 从源码构建界面（可选）
+
+仓库根目录已经包含构建好的界面产物，直接加载即可使用，不需要构建。只有修改了 `ui/` 下的界面源码才需要重新构建：
+
+```bash
+npm --prefix ui install
+npm --prefix ui run build
+```
+
+`ui-dist/` 是界面产物，`manifest.json` 和扩展加载路径始终在仓库根目录，构建不会改变扩展 ID。
 
 ## 快速开始
 
